@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "329459906728",
+    "project_id": "projetografo-b3fb7",
+    "storage_bucket": "projetografo-b3fb7.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:329459906728:android:5df166ea79b2d42d2bea9d",
+        "android_client_info": {
+          "package_name": "com.puc.projectgrafo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "329459906728-cnd0mlffpqac1di1jn01cldsprfh1ruc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBYneuw3mkB60CCJBOJlmCvTbcBy_7kGgA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "329459906728-cnd0mlffpqac1di1jn01cldsprfh1ruc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
