@@ -28,12 +28,42 @@ class MainActivity : AppCompatActivity() {
         editText = binding.impOrigem
         editText2 = binding.impDestino
 
-        binding.calculateButton.setOnClickListener {
-            calculateShortestPaths()
+        val db = FirebaseFirestore.getInstance()
+        val prediosCollectionRef = db.collection("predios")
+
+        prediosCollectionRef.get()
+            .addOnSuccessListener { querySnapshot ->
+                var quantidade: Int? = null
+
+                for (documentSnapshot in querySnapshot) {
+                    quantidade = documentSnapshot.getLong("quantidade")?.toInt()
+                }
+
+            binding.calculateButton.setOnClickListener {
+                val origemText = editText.text.toString()
+                val destinoText = editText2.text.toString()
+
+                if (origemText.isNotEmpty() && destinoText.isNotEmpty()) {
+                    val origem = origemText.toIntOrNull()
+                    val destino = destinoText.toIntOrNull()
+
+                    if (origem != null && destino != null) {
+                        if (origem < quantidade!! && destino < quantidade) {
+                            calcularMenorCaminho()
+                        } else {
+                            resultTextView.text = "O predio digitado não existe"
+                        }
+                    } else {
+                        resultTextView.text = "Insira apenas valores numéricos para origem e destino."
+                    }
+                } else {
+                    resultTextView.text = "Por favor, preencha os campos de origem e destino."
+                }
+            }
         }
     }
 
-    private fun calculateShortestPaths() {
+    private fun calcularMenorCaminho() {
         val origemText = editText.text.toString()
         val destinoText = editText2.text.toString()
 
@@ -43,7 +73,6 @@ class MainActivity : AppCompatActivity() {
 
             val db = FirebaseFirestore.getInstance()
             val graphCollectionRef = db.collection("graphs")
-
             val prediosCollectionRef = db.collection("predios")
 
             prediosCollectionRef.get()
@@ -69,11 +98,18 @@ class MainActivity : AppCompatActivity() {
                                     val tempo = documentSnapshot.getLong("tempo")?.toInt()
 
                                     if (origem != null && destino != null && tempo != null) {
-                                        graph.addEdge(origem, destino, tempo)
-                                        Log.d(
-                                            "MainActivity",
-                                            "Valores adicionados: source=$origem, destination=$destino, weight=$tempo"
-                                        )
+                                        if (origem < quantidade && destino < quantidade) {
+                                            graph.addEdge(origem, destino, tempo)
+                                            Log.d(
+                                                "MainActivity",
+                                                "Valores adicionados: source=$origem, destination=$destino, weight=$tempo"
+                                            )
+                                        } else {
+                                            Log.d(
+                                                "MainActivity",
+                                                "Valores inválidos: source=$origem, destination=$destino, weight=$tempo"
+                                            )
+                                        }
                                     } else {
                                         Log.d(
                                             "MainActivity",
@@ -85,81 +121,18 @@ class MainActivity : AppCompatActivity() {
                                 val result = graph.dijkstra(origem, destino)
 
                                 resultTextView.text = ""
-                                if (result.path.isNotEmpty()) {
+                                if (result.distance != Int.MAX_VALUE) {
                                     val pathString = result.path.joinToString(" -> ")
                                     val distanceString = result.distance.toString()
                                     val resultText =
                                         "Menor caminho: $pathString\nTempo: $distanceString minutos"
                                     resultTextView.text = resultText
                                 } else {
-                                    resultTextView.text = "Não foi possível encontrar um caminho válido."
+                                    resultTextView.text = "Não foi possível encontrar um caminho."
                                 }
                             }
                     }
                 }
         }
     }
-
-    class Graph(private val numVertices: Int) {
-        private val matrizAdjacente: Array<IntArray> = Array(numVertices) { IntArray(numVertices) }
-
-        fun addEdge(origem: Int, destino: Int, tempo: Int) {
-            matrizAdjacente[origem][destino] = tempo
-            matrizAdjacente[destino][origem] = tempo
-        }
-
-        fun dijkstra(origem: Int, destino: Int): DijkstraResult {
-            val tempo = IntArray(numVertices) { Int.MAX_VALUE }
-            val visitado = BooleanArray(numVertices)
-            val predecessor = IntArray(numVertices) { -1 }
-
-            tempo[origem] = 0
-
-            for (count in 0 until numVertices - 1) {
-                val currentVertex = getMinimumDistanceVertex(tempo, visitado)
-                visitado[currentVertex] = true
-
-                for (vertex in 0 until numVertices) {
-                    if (!visitado[vertex] && matrizAdjacente[currentVertex][vertex] != 0 && tempo[currentVertex] != Int.MAX_VALUE) {
-                        val novaDistancia = tempo[currentVertex] + matrizAdjacente[currentVertex][vertex]
-                        if (novaDistancia < tempo[vertex]) {
-                            tempo[vertex] = novaDistancia
-                            predecessor[vertex] = currentVertex
-                        }
-                    }
-                }
-            }
-
-            val path = getPath(destino, predecessor)
-
-            return DijkstraResult(tempo[destino], path)
-        }
-
-        private fun getMinimumDistanceVertex(distancia: IntArray, visitado: BooleanArray): Int {
-            var minDistancia = Int.MAX_VALUE
-            var minVertice = -1
-
-            for (vertice in 0 until numVertices) {
-                if (!visitado[vertice] && distancia[vertice] <= minDistancia) {
-                    minDistancia = distancia[vertice]
-                    minVertice = vertice
-                }
-            }
-            return minVertice
-        }
-
-        private fun getPath(destino: Int, predecessor: IntArray): List<Int> {
-            val path = mutableListOf<Int>()
-            var currentVertex = destino
-
-            while (currentVertex != -1) {
-                path.add(0, currentVertex)
-                currentVertex = predecessor[currentVertex]
-            }
-
-            return path
-        }
-    }
-
-    data class DijkstraResult(val distance: Int, val path: List<Int>)
 }
